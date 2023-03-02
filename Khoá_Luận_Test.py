@@ -14,38 +14,54 @@ list_name = []
 list_df = []
 start = "2000-1-1"
 end = dt.date.today().strftime("%Y-%m-%d")
-st.title("Stock's Portfolio Optimization")
-tab1, tab2 , tab3, tab4 = st.tabs(["Data", "Chart Line","Portfolio Optimization","Test"])
+st.title("Stock's Portfolio Optimization in Viet Nam Market")
+tab1, tab2 , tab3, tab4 = st.tabs(["Data", "Chart Line","Daily Return","Portfolio Optimization"])
 
 #Get data
-tab1.subheader("Amount of stock you want to get")
-number_of_stock = tab1.text_input("Please input amount of stocks :")
+tab1.subheader("Amount of Stock")
+number_of_stock = tab1.number_input("_Please input amount of stocks you want to invest:_",step =1,min_value=0,max_value=10)
 count_stock = 0
-if number_of_stock == "":
-    tab1.write("Please input amount of stocks")
+if number_of_stock == 0:
+    tab1.write(":red[Please input amount !]")
+elif 0< number_of_stock <=2:
+    tab1.write(":red[Please input amount of stock  > 2 !]")
 else:
     tab1.subheader("Stock's Code")
-    for i in range(0,int(number_of_stock)):
-        selected_stock = tab1.text_input("Please input stock code:", key = count_stock)
+    for i in range(0,number_of_stock):
+        selected_stock = tab1.text_input("_Please input stock code:_", key = count_stock)
         count_stock = 1 + count_stock
         list_name.append(selected_stock)
         if selected_stock == "":
-            tab1.write("Please input the stock code")
+            tab1.write(":red[Please input the stock code !]")
         else:
-            option = tab1.checkbox('Show the history of stock',key = count_stock + 100)
-            df = stock_historical_data(selected_stock, start, end)
-            df = pd.DataFrame(df)
-            list_df.append(df)
-            if option == True:
-                tab1.subheader(selected_stock + "'s stock history data")
-                tab1.dataframe(df)
+            fd = int(time.mktime(time.strptime(start, "%Y-%m-%d")))
+            td = int(time.mktime(time.strptime(end, "%Y-%m-%d")))
+            symbol = selected_stock
+            data = requests.get(
+                'https://apipubaws.tcbs.com.vn/stock-insight/v1/stock/bars-long-term?ticker={}&type=stock&resolution=D&from={}&to={}'.format(
+                    symbol, fd, td)).json()
+            df = json_normalize(data['data'])
+            if df.empty:
+                tab1.write(":red[You input a wrong format or a wrong code, please try again !]")
+            else:
+                df['tradingDate'] = pd.to_datetime(df.tradingDate.str.split("T", expand=True)[0])
+                df.columns = df.columns.str.title()
+                df.rename(columns={'Tradingdate': 'TradingDate'}, inplace=True)
+                df = pd.DataFrame(df)
+                option = tab1.checkbox('Show the history of stock', key=count_stock + 100)
+                list_df.append(df)
+                if option == True:
+                    tab1.subheader(selected_stock + "'s stock history data")
+                    tab1.dataframe(df)
+
+tab1.write("_if you done , you can click on next tab for next step_")
 
 #Tab2
 tab2.subheader("Chart line of stocks")
 option_2 = tab2.checkbox('Show close price of stocks data')
 if option_2 == True:
     if list_df == []:
-        tab2.write("Input the stock code first !!!")
+        tab2.write(":red[Input the stock code at tab Data first !]")
     else:
         n = 0
         for i in range(0, len(list_name)):
@@ -67,7 +83,7 @@ if option_2 == True:
 option_3 = tab2.checkbox('Show chart line of stocks data')
 if option_3 == True:
     if list_df == []:
-        tab2.write("Input the stock code first !!!")
+        tab2.write(":red[Input the stock code at tab Data first !]")
     else:
         n = 0
         for i in range(0, len(list_name)):
@@ -86,12 +102,14 @@ if option_3 == True:
         tab2.subheader("The chart line of stocks")
         tab2.line_chart(data_1)
 
+tab2.write("_if you done , you can click on next tab for next step_")
+
 #Tab3
 Portfolio = False
 option_4 = tab3.checkbox('Show the daily-return of stocks data')
 if option_4 == True:
     if list_df == []:
-        tab3.write("Input the stock code first !!!")
+        tab3.write(":red[Input the stock code at tab Data first !]")
     else:
         tab3.subheader("The daily-return of stocks data")
         col1, col2 = tab3.columns([3, 1])
@@ -119,6 +137,7 @@ if option_4 == True:
         col2.write(data_3.std())
         Portfolio = True
 
+
 if Portfolio == True:
     tab3.subheader("Chart of Volatility's Daily Return")
     fig = sns.displot(data=data_3, kind='kde', aspect=2.5)
@@ -133,6 +152,8 @@ if Portfolio == True:
     plt.title("Cumulative Returns of Individual Stocks Starting with 2.000.000 VND ")
     plt.legend(daily_cum_returns)
     tab3.pyplot(fig)
+
+tab3.write("_if you done , you can click on next tab for next step_")
 
 #Tab4
 if Portfolio == True:
@@ -181,4 +202,7 @@ if Portfolio == True:
     tab4.write('Expected annual return: {}%'.format((expected_annual_return * 100).round(2)))
     tab4.write('Annual volatility: {}%'.format((annual_volatility * 100).round(2)))
     tab4.write('Sharpe ratio: {}'.format(sharpe_ratio.round(2)))
+else:
+    tab4.write(":red[Input the stock code at tab Data first !]")
+
 
