@@ -10,6 +10,7 @@ from pypfopt import plotting
 from pypfopt import risk_models
 from pypfopt import expected_returns
 
+
 list_name = []
 list_df = []
 start = "2000-1-1"
@@ -47,6 +48,7 @@ else:
                 df['tradingDate'] = pd.to_datetime(df.tradingDate.str.split("T", expand=True)[0])
                 df.columns = df.columns.str.title()
                 df.rename(columns={'Tradingdate': 'TradingDate'}, inplace=True)
+                df["TradingDate"]= df["TradingDate"].dt.strftime("%Y-%m-%d")
                 df = pd.DataFrame(df)
                 option = tab1.checkbox('Show the history of stock', key=count_stock + 100)
                 list_df.append(df)
@@ -54,7 +56,7 @@ else:
                     tab1.subheader(selected_stock + "'s stock history data")
                     tab1.dataframe(df)
 
-tab1.write("_if you done , you can click on next tab for next step_")
+tab1.write("_if you're done , you can click on the next tab for next step_")
 
 #Tab2
 tab2.subheader("Chart line of stocks")
@@ -102,7 +104,7 @@ if option_3 == True:
         tab2.subheader("The chart line of stocks")
         tab2.line_chart(data_1)
 
-tab2.write("_if you done , you can click on next tab for next step_")
+tab2.write("_if you're done , you can click on the next tab for next step_")
 
 #Tab3
 Portfolio = False
@@ -120,12 +122,14 @@ if option_4 == True:
                 n = n + 1
                 data_3 = list_df[i].drop(columns=['Open', "High", "Low", "Volume"])
                 data_3.columns = [list_name[i], "TradingDate"]
+                data_3['TradingDate'] = pd.to_datetime(data_3['TradingDate'],format='%Y-%m-%d')
                 data_3.set_index("TradingDate", inplace=True)
                 data_3[list_name[i]] = data_3[list_name[i]].resample('d').ffill().pct_change()
                 data_3 = data_3.dropna()
             if n > 0:
                 data_4 = list_df[i].drop(columns=['Open', "High", "Low", "Volume"])
                 data_4.columns = [list_name[i], "TradingDate"]
+                data_4['TradingDate'] = pd.to_datetime(data_4['TradingDate'],format= '%Y-%m-%d')
                 data_4.set_index("TradingDate", inplace=True)
                 data_4[list_name[i]] = data_4[list_name[i]].resample('d').ffill().pct_change()
                 data_4 = data_4.dropna()
@@ -153,7 +157,7 @@ if Portfolio == True:
     plt.legend(daily_cum_returns)
     tab3.pyplot(fig)
 
-tab3.write("_if you done , you can click on next tab for next step_")
+tab3.write("_if you're done , you can click on the next tab for next step_")
 
 #Tab4
 if Portfolio == True:
@@ -204,5 +208,3 @@ if Portfolio == True:
     tab4.write('Sharpe ratio: {}'.format(sharpe_ratio.round(2)))
 else:
     tab4.write(":red[Input the stock code at tab Data first !]")
-
-
